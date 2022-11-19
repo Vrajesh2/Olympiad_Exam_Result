@@ -1,0 +1,72 @@
+create database da_prac;
+use database da_prac;
+
+create table student_list 
+(
+roll_number int,
+student_name varchar(15),
+class int,
+section varchar(5),
+school_name varchar(30));
+
+create table student_response 
+(
+roll_number int,
+question_paper_code int,
+question_number int,
+option_marked varchar(5));
+
+create table correct_answer
+(
+question_paper_code int,
+question_number int,
+correct_option varchar(5));
+
+create table question_paper_code
+(
+paper_code int,
+class int,
+subject varchar(10));
+
+
+
+
+
+
+select * from student_list;
+
+select * from student_response;
+
+select * from correct_answer;
+
+select * from question_paper_code;
+
+--groupby and aggreagte function go hand in hand
+with cte as (
+    select sl.roll_number, sl.student_name, sl.class, sl.section, sl.school_name ,
+    sum(case when pc.subject = 'Math' and sr.option_marked = ca.correct_option and sr.option_marked != 'e' then 1 else 0 end) as Maths_Correct,
+    sum(case when pc.subject = 'Math' and sr.option_marked != ca.correct_option and sr.option_marked != 'e' then 1 else 0 end) as Maths_Wrong,
+    sum(case when pc.subject = 'Math' and sr.option_marked = 'e' then 1 else 0 end) as Maths_Yet_To_Learn,
+    sum(case when pc.subject = 'Math' then 1 else 0 end) as Total_Maths_Question,
+    sum(case when pc.subject = 'Science' and sr.option_marked = ca.correct_option and sr.option_marked != 'e' then 1 else 0 end) as Science_Correct,
+    sum(case when pc.subject = 'Science' and sr.option_marked != ca.correct_option and sr.option_marked != 'e' then 1 else 0 end) as Science_Wrong,
+    sum(case when pc.subject = 'Science' and sr.option_marked = 'e' then 1 else 0 end) as Science_Yet_To_Learn,
+    sum(case when pc.subject = 'Science' then 1 else 0 end) as Total_Science_Question
+    from student_list sl
+    join student_response sr on sr.roll_number = sl.roll_number
+    join correct_answer ca on
+            ca.question_paper_code = sr.question_paper_code and ca.question_number = sr.question_number
+    join question_paper_code pc on
+            pc.paper_code = ca.question_paper_code
+    --where sr.roll_number = 10159
+    group by 1,2,3,4,5)
+select roll_number, student_name, class, section, school_name, 
+Maths_Correct, Maths_Wrong, Maths_Yet_To_Learn, Maths_Correct as Maths_Score, round((Maths_Correct/Total_Maths_Question) * 100,2) as Maths_Percentage,
+Science_Correct, Science_Wrong, Science_Yet_To_Learn, Science_Correct as Science_Score, round((Science_Correct/Total_Science_Question) * 100,2) as Science_Percentage,
+round((Maths_Correct + Science_Correct)/(Total_Maths_Question + Total_Science_Question)*100,2) as Tot_Percentage,
+rank() over (order by Tot_Percentage desc),
+dense_rank() over (order by Tot_Percentage desc)
+from cte;
+
+
+
