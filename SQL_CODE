@@ -29,10 +29,6 @@ class int,
 subject varchar(10));
 
 
-
-
-
-
 select * from student_list;
 
 select * from student_response;
